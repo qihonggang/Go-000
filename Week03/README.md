@@ -4,4 +4,8 @@
 - 利用 errgroup 启动三个http服务 http1、http2 和 http3。
 - 当接收到 interrupt 信号时，将三个http服务全部停止。
 
-作业实现代码见： [main.go](https://github.com/qihonggang/Go-000/blob/main/Week03/main.go)。
+作业代码： [main.go](https://github.com/qihonggang/Go-000/blob/main/Week03/main.go)。
+
+运行结果：
+
+![](result.png)
