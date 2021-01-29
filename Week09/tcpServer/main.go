@@ -6,6 +6,33 @@ import (
 	"net"
 )
 
+func handleReadConn(conn net.Conn, ch chan <- string) {
+	defer conn.Close()
+	defer close(ch)
+	rd := bufio.NewReader(conn)
+	for {
+		line, _, err := rd.ReadLine()
+		if err != nil {
+			log.Printf("read error: %v\n", err)
+			return
+		}
+		ch <- string(line)
+	}
+}
+
+func handleWriteConn(conn net.Conn, ch <- chan string) {
+	wr := bufio.NewWriter(conn)
+	for {
+		msg, ok := <- ch
+		if !ok {
+			break
+		}
+		wr.WriteString("msg: ")
+		wr.WriteString(msg)
+		wr.Flush()
+	}
+}
+
 func main() {
 	listen, err := net.Listen("tcp", "127.0.0.1:10000")
 	if err != nil {
@@ -17,24 +44,10 @@ func main() {
 			log.Printf("accept error: %v\n", err)
 			continue
 		}
-		// 开始goroutine监听连接
-		go handleConn(conn)
-	}
-}
-
-func handleConn(conn net.Conn) {
-	defer conn.Close()
-	// 读写缓存区
-	rd := bufio.NewReader(conn)
-	wr := bufio.NewWriter(conn)
-	for {
-		line, _, err := rd.ReadLine()
-		if err != nil {
-			log.Printf("read error: %v\n", err)
-			return
-		}
-		wr.WriteString("hello ")
-		wr.Write(line)
-		wr.Flush() // 一次性syscall
+		ch := make(chan string, 10)
+		// 读消息
+		go handleReadConn(conn, ch)
+		// 写消息
+		go handleWriteConn(conn, ch)
 	}
 }
